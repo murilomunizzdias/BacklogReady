@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Acesso</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+
+  <!-- Valor 8: Fazer cadastro ou login -->
+  <section class="tela-acesso" id="telaAcesso">
+    <div class="cartao">
+      <h1 class="titulo" id="titulo">Entrar</h1>
+
+      <div class="abas">
+        <button type="button" class="aba ativa" data-modo="login">Entrar</button>
+        <button type="button" class="aba" data-modo="cadastro">Cadastrar</button>
+      </div>
+
+      <form class="form" id="form" novalidate>
+        <label class="campo" id="campoNome" hidden>
+          Nome
+          <input type="text" id="nome" autocomplete="name">
+        </label>
+
+        <label class="campo">
+          E-mail
+          <input type="email" id="email" autocomplete="email">
+        </label>
+
+        <label class="campo">
+          Senha
+          <input type="password" id="senha" autocomplete="current-password">
+        </label>
+
+        <p class="erro" id="erro" role="alert"></p>
+
+        <button type="submit" class="btn" id="btnEnviar">Entrar</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Valor 8: Abrir menu nos 3 tracinhos -->
+  <div class="app" id="app" hidden>
+    <aside class="lateral" id="lateral">
+      <button type="button" class="btn-menu" id="btnMenu" aria-label="Abrir menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <nav class="lateral-menu">
+        <p class="usuario" id="usuario"></p>
+        <button type="button" class="menu-item" data-aba="produtos">Produtos</button>
+        <button type="button" class="menu-item">Opção 2</button>
+        <button type="button" class="menu-item">Opção 3</button>
+        <button type="button" class="menu-item">Opção 4</button>
+        <div class="menu-separador"></div>
+        <button type="button" class="menu-item" id="btnSair">Sair</button>
+      </nav>
+    </aside>
+
+    <main class="conteudo" id="conteudo"></main>
+  </div>
+</body>
+</html>
