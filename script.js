@@ -103,6 +103,9 @@ const CHAVE_USUARIOS = 'usuarios';
       telaAcesso.hidden = true;
       app.hidden = false;
       fecharMenu();
+      if (!conteudo.hasChildNodes()) {
+        mostrarListaProdutos();
+      }
     }
 
     function sair() {
@@ -254,6 +257,7 @@ const CHAVE_USUARIOS = 'usuarios';
 
       const comprar = criar('button', 'btn', 'Comprar agora');
       comprar.type = 'button';
+      comprar.addEventListener('click', () => abrirSelecaoModoCompra(p));
       compra.appendChild(comprar);
       compra.appendChild(criar('span', 'vendedor', 'Vendido por ' + p.vendedor));
       topo.appendChild(compra);
@@ -275,10 +279,229 @@ const CHAVE_USUARIOS = 'usuarios';
       window.scrollTo(0, 0);
     }
 
+    /* ---------- Valor 8: Seleção do modo de compra ---------- */
+    const MODOS_COMPRA = [
+      { id: 'pix', nome: 'Pix', icone: '⚡', descricao: 'Aprovação imediata e 5% de desconto', desconto: 0.05 },
+      { id: 'cartao', nome: 'Cartão de Crédito', icone: '💳', descricao: 'Em até 12x sem juros', desconto: 0 },
+      { id: 'boleto', nome: 'Boleto Bancário', icone: '📄', descricao: 'Vencimento em 3 dias úteis', desconto: 0 }
+    ];
+
+    function abrirSelecaoModoCompra(p) {
+      conteudo.replaceChildren();
+      const pagina = criar('div', 'pagina');
+
+      const voltar = criar('button', 'link-voltar', '‹ Voltar ao produto');
+      voltar.type = 'button';
+      voltar.addEventListener('click', () => abrirProduto(p.id));
+      pagina.appendChild(voltar);
+
+      pagina.appendChild(criar('h2', 'pagina-titulo', 'Selecione o modo de compra'));
+
+      const container = criar('div', 'checkout-container');
+
+      // Resumo do produto
+      const resumo = criar('div', 'checkout-resumo');
+      resumo.appendChild(criar('h3', 'secao-titulo', 'Resumo do pedido'));
+
+      const itemResumo = criar('div', 'resumo-item');
+      itemResumo.appendChild(criar('div', 'resumo-icone', p.emoji));
+      const itemInfo = criar('div', 'resumo-info');
+      itemInfo.appendChild(criar('strong', '', p.nome));
+      itemInfo.appendChild(criar('span', 'resumo-preco-unitario', 'Preço unitário: ' + moeda(p.preco)));
+      itemResumo.appendChild(itemInfo);
+      resumo.appendChild(itemResumo);
+
+      const totalInfo = criar('div', 'resumo-total');
+      const labelTotal = criar('span', '', 'Total:');
+      const valorTotal = criar('strong', 'total-destaque', moeda(p.preco));
+      totalInfo.appendChild(labelTotal);
+      totalInfo.appendChild(valorTotal);
+      resumo.appendChild(totalInfo);
+
+      container.appendChild(resumo);
+
+      // Opções do modo de compra
+      const opcoesContainer = criar('div', 'checkout-opcoes');
+      opcoesContainer.appendChild(criar('h3', 'secao-titulo', 'Modo de compra'));
+
+      let modoSelecionado = null;
+      const botoesModos = [];
+
+      const btnConfirmar = criar('button', 'btn btn-confirmar-compra', 'Confirmar compra');
+      btnConfirmar.type = 'button';
+      btnConfirmar.disabled = true;
+
+      const listaModos = criar('div', 'grade-modos');
+
+      MODOS_COMPRA.forEach(modo => {
+        const opcao = criar('button', 'opcao-modo');
+        opcao.type = 'button';
+
+        const topoOpcao = criar('div', 'opcao-modo-topo');
+        topoOpcao.appendChild(criar('span', 'opcao-modo-icone', modo.icone));
+        topoOpcao.appendChild(criar('strong', 'opcao-modo-nome', modo.nome));
+        opcao.appendChild(topoOpcao);
+
+        opcao.appendChild(criar('span', 'opcao-modo-desc', modo.descricao));
+
+        opcao.addEventListener('click', () => {
+          modoSelecionado = modo;
+          botoesModos.forEach(b => b.classList.remove('selecionado'));
+          opcao.classList.add('selecionado');
+          btnConfirmar.disabled = false;
+
+          const precoFinal = modo.desconto > 0 ? p.preco * (1 - modo.desconto) : p.preco;
+          valorTotal.textContent = moeda(precoFinal);
+          labelTotal.textContent = modo.desconto > 0 ? 'Total com 5% de desconto (Pix):' : 'Total:';
+        });
+
+        botoesModos.push(opcao);
+        listaModos.appendChild(opcao);
+      });
+
+      opcoesContainer.appendChild(listaModos);
+
+      btnConfirmar.addEventListener('click', () => {
+        if (!modoSelecionado) return;
+        finalizarCompra(p, modoSelecionado);
+      });
+
+      opcoesContainer.appendChild(btnConfirmar);
+      container.appendChild(opcoesContainer);
+
+      pagina.appendChild(container);
+      conteudo.appendChild(pagina);
+      window.scrollTo(0, 0);
+    }
+
+    function finalizarCompra(p, modo) {
+      if (p.estoque > 0) {
+        p.estoque -= 1;
+      }
+
+      const precoFinal = modo.desconto > 0 ? p.preco * (1 - modo.desconto) : p.preco;
+      const sessaoAtual = guardar.ler(CHAVE_SESSAO);
+      const emailUsuario = sessaoAtual ? sessaoAtual.email : 'geral';
+      const chaveExtrato = 'extrato_' + emailUsuario;
+
+      const extratoAtual = guardar.ler(chaveExtrato) || [];
+      const agora = new Date();
+      const novaTransacao = {
+        id: Date.now(),
+        data: agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        produto: p.nome,
+        emoji: p.emoji,
+        modoCompra: modo.nome,
+        valor: precoFinal,
+        status: 'Aprovado'
+      };
+
+      extratoAtual.unshift(novaTransacao);
+      guardar.salvar(chaveExtrato, extratoAtual);
+
+      conteudo.replaceChildren();
+      const pagina = criar('div', 'pagina');
+
+      const cardSucesso = criar('div', 'sucesso-compra');
+      cardSucesso.appendChild(criar('div', 'sucesso-icone', '✅'));
+      cardSucesso.appendChild(criar('h2', 'sucesso-titulo', 'Compra realizada com sucesso!'));
+      cardSucesso.appendChild(criar('p', 'sucesso-desc', 'Você selecionou o modo de compra: ' + modo.nome));
+
+      const infoResumo = criar('div', 'sucesso-detalhes');
+      infoResumo.appendChild(criar('p', '', 'Produto: ' + p.nome));
+      infoResumo.appendChild(criar('p', '', 'Valor pago: ' + moeda(precoFinal)));
+      infoResumo.appendChild(criar('p', '', 'Data: ' + novaTransacao.data));
+      cardSucesso.appendChild(infoResumo);
+
+      const acoes = criar('div', 'sucesso-acoes');
+      const btnExtrato = criar('button', 'btn', 'Ver extrato');
+      btnExtrato.type = 'button';
+      btnExtrato.addEventListener('click', () => {
+        mostrarExtrato();
+      });
+
+      const btnProdutos = criar('button', 'btn btn-secundario', 'Continuar comprando');
+      btnProdutos.type = 'button';
+      btnProdutos.addEventListener('click', () => {
+        mostrarListaProdutos();
+      });
+
+      acoes.appendChild(btnExtrato);
+      acoes.appendChild(btnProdutos);
+      cardSucesso.appendChild(acoes);
+
+      pagina.appendChild(cardSucesso);
+      conteudo.appendChild(pagina);
+      window.scrollTo(0, 0);
+    }
+
+    /* ---------- Valor 7: Ver extrato ---------- */
+    function mostrarExtrato() {
+      conteudo.replaceChildren();
+      const pagina = criar('div', 'pagina');
+
+      const voltar = criar('button', 'link-voltar', '‹ Voltar para produtos');
+      voltar.type = 'button';
+      voltar.addEventListener('click', mostrarListaProdutos);
+      pagina.appendChild(voltar);
+
+      pagina.appendChild(criar('h2', 'pagina-titulo', 'Extrato de Compras'));
+
+      const sessaoAtual = guardar.ler(CHAVE_SESSAO);
+      const emailUsuario = sessaoAtual ? sessaoAtual.email : 'geral';
+      const chaveExtrato = 'extrato_' + emailUsuario;
+      const transacoes = guardar.ler(chaveExtrato) || [];
+
+      if (transacoes.length === 0) {
+        const vazio = criar('div', 'extrato-vazio');
+        vazio.appendChild(criar('p', '', 'Nenhuma compra registrada no seu extrato.'));
+        const btnComprar = criar('button', 'btn', 'Ver produtos disponíveis');
+        btnComprar.type = 'button';
+        btnComprar.addEventListener('click', mostrarListaProdutos);
+        vazio.appendChild(btnComprar);
+        pagina.appendChild(vazio);
+      } else {
+        const listaExtrato = criar('div', 'lista-extrato');
+        transacoes.forEach(t => {
+          const item = criar('div', 'card-extrato');
+
+          const esq = criar('div', 'extrato-col-esq');
+          if (t.emoji) {
+            esq.appendChild(criar('span', 'extrato-emoji', t.emoji));
+          }
+          const info = criar('div', 'extrato-info');
+          info.appendChild(criar('strong', 'extrato-produto-nome', t.produto));
+          info.appendChild(criar('span', 'extrato-modo', 'Modo: ' + t.modoCompra));
+          info.appendChild(criar('span', 'extrato-data', t.data));
+          esq.appendChild(info);
+          item.appendChild(esq);
+
+          const dir = criar('div', 'extrato-col-dir');
+          dir.appendChild(criar('span', 'extrato-valor', moeda(t.valor)));
+          dir.appendChild(criar('span', 'badge-status', t.status || 'Aprovado'));
+          item.appendChild(dir);
+
+          listaExtrato.appendChild(item);
+        });
+        pagina.appendChild(listaExtrato);
+      }
+
+      conteudo.appendChild(pagina);
+      window.scrollTo(0, 0);
+    }
+
     document.querySelector('[data-aba="produtos"]').addEventListener('click', () => {
       mostrarListaProdutos();
       fecharMenu();
     });
+
+    const btnAbaExtrato = document.querySelector('[data-aba="extrato"]');
+    if (btnAbaExtrato) {
+      btnAbaExtrato.addEventListener('click', () => {
+        mostrarExtrato();
+        fecharMenu();
+      });
+    }
 
     /* ---------- Ao abrir a página ---------- */
     const sessao = guardar.ler(CHAVE_SESSAO);
