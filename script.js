@@ -102,6 +102,7 @@ const CHAVE_USUARIOS = 'usuarios';
       usuario.textContent = dados.nome;
       telaAcesso.hidden = true;
       app.hidden = false;
+      mostrarHome();
       fecharMenu();
     }
 
@@ -186,13 +187,55 @@ const CHAVE_USUARIOS = 'usuarios';
       return el;
     }
 
-    function mostrarListaProdutos() {
+    function criarBarraPesquisa() {
+      const busca = criar('form', 'barra-pesquisa');
+      busca.setAttribute('role', 'search');
+
+      const campo = criar('input', '', '');
+      campo.type = 'search';
+      campo.id = 'campoPesquisa';
+      campo.name = 'pesquisa';
+      campo.placeholder = 'Buscar produtos';
+      campo.setAttribute('aria-label', 'Buscar produtos');
+
+      const lupa = criar('button', 'btn-pesquisa', '⌕');
+      lupa.type = 'submit';
+      lupa.setAttribute('aria-label', 'Pesquisar');
+      busca.append(campo, lupa);
+
+      busca.addEventListener('submit', e => {
+        e.preventDefault();
+        const termo = campo.value.trim();
+        if (termo) mostrarListaProdutos(termo);
+      });
+
+      return busca;
+    }
+
+    function mostrarHome() {
+      conteudo.replaceChildren();
+      const pagina = criar('div', 'pagina pagina-home');
+      pagina.appendChild(criar('h1', 'home-titulo', 'Encontre o que você precisa'));
+      pagina.appendChild(criar('p', 'home-subtitulo', 'Busque por produtos e anúncios disponíveis.'));
+      pagina.appendChild(criarBarraPesquisa());
+      conteudo.appendChild(pagina);
+    }
+
+    function mostrarListaProdutos(termo = '') {
       conteudo.replaceChildren();
       const pagina = criar('div', 'pagina');
-      pagina.appendChild(criar('h2', 'pagina-titulo', 'Produtos'));
+      pagina.appendChild(criar('h2', 'pagina-titulo', termo ? 'Resultados para "' + termo + '"' : 'Produtos'));
 
       const grade = criar('div', 'grade-produtos');
-      PRODUTOS.forEach(p => {
+      const busca = termo.toLocaleLowerCase();
+      const produtos = PRODUTOS.filter(p => {
+        if (!busca) return true;
+        return [p.nome, p.marca, p.descricao].some(valor =>
+          valor.toLocaleLowerCase().includes(busca)
+        );
+      });
+
+      produtos.forEach(p => {
         const card = criar('button', 'card-produto');
         card.type = 'button';
         card.setAttribute('aria-label', 'Abrir página do produto: ' + p.nome);
@@ -209,7 +252,14 @@ const CHAVE_USUARIOS = 'usuarios';
         card.addEventListener('click', () => abrirProduto(p.id));
         grade.appendChild(card);
       });
-      pagina.appendChild(grade);
+
+      if (produtos.length) {
+        pagina.appendChild(grade);
+      } else {
+        const vazio = criar('p', 'resultado-vazio', 'Nenhum anúncio encontrado para essa busca.');
+        vazio.setAttribute('role', 'status');
+        pagina.appendChild(vazio);
+      }
       conteudo.appendChild(pagina);
     }
 
@@ -277,6 +327,11 @@ const CHAVE_USUARIOS = 'usuarios';
 
     document.querySelector('[data-aba="produtos"]').addEventListener('click', () => {
       mostrarListaProdutos();
+      fecharMenu();
+    });
+
+    document.querySelector('[data-aba="home"]').addEventListener('click', () => {
+      mostrarHome();
       fecharMenu();
     });
 
