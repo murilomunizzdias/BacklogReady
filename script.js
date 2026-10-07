@@ -389,7 +389,10 @@ const CHAVE_USUARIOS = 'usuarios';
       const novaTransacao = {
         id: Date.now(),
         data: agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        produtoId: p.id,
         produto: p.nome,
+        vendedor: p.vendedor,
+        freteGratis: p.freteGratis,
         emoji: p.emoji,
         modoCompra: modo.nome,
         valor: precoFinal,
@@ -426,7 +429,14 @@ const CHAVE_USUARIOS = 'usuarios';
         mostrarListaProdutos();
       });
 
+      const btnPedidos = criar('button', 'btn btn-secundario', 'Meus pedidos');
+      btnPedidos.type = 'button';
+      btnPedidos.addEventListener('click', () => {
+        abrirPedido(novaTransacao.id);
+      });
+
       acoes.appendChild(btnExtrato);
+      acoes.appendChild(btnPedidos);
       acoes.appendChild(btnProdutos);
       cardSucesso.appendChild(acoes);
 
@@ -490,6 +500,166 @@ const CHAVE_USUARIOS = 'usuarios';
       window.scrollTo(0, 0);
     }
 
+    /* ---------- Meus Pedidos ---------- */
+    /* Os pedidos são as compras salvas no extrato do usuário. */
+    const ETAPAS_PEDIDO = ['Pedido realizado', 'Pagamento aprovado', 'Em preparação', 'Enviado', 'Entregue'];
+
+    function lerPedidos() {
+      const sessaoAtual = guardar.ler(CHAVE_SESSAO);
+      const emailUsuario = sessaoAtual ? sessaoAtual.email : 'geral';
+      return guardar.ler('extrato_' + emailUsuario) || [];
+    }
+
+    const numeroPedido = pedido => '#' + String(pedido.id).slice(-8);
+
+    /* Boleto fica aguardando pagamento; Pix e cartão já saem aprovados. */
+    function etapaAtual(pedido) {
+      return pedido.modoCompra === 'Boleto Bancário' ? 0 : 1;
+    }
+
+    function textoStatus(pedido) {
+      return etapaAtual(pedido) === 0 ? 'Aguardando pagamento' : ETAPAS_PEDIDO[etapaAtual(pedido)];
+    }
+
+    function mostrarPedidos() {
+      conteudo.replaceChildren();
+      const pagina = criar('div', 'pagina');
+
+      const voltar = criar('button', 'link-voltar', '‹ Voltar para produtos');
+      voltar.type = 'button';
+      voltar.addEventListener('click', mostrarListaProdutos);
+      pagina.appendChild(voltar);
+
+      pagina.appendChild(criar('h2', 'pagina-titulo', 'Meus Pedidos'));
+
+      const pedidos = lerPedidos();
+
+      if (pedidos.length === 0) {
+        const vazio = criar('div', 'extrato-vazio');
+        vazio.appendChild(criar('p', '', 'Você ainda não fez nenhum pedido.'));
+        const btnComprar = criar('button', 'btn', 'Ver produtos disponíveis');
+        btnComprar.type = 'button';
+        btnComprar.addEventListener('click', mostrarListaProdutos);
+        vazio.appendChild(btnComprar);
+        pagina.appendChild(vazio);
+      } else {
+        const lista = criar('div', 'lista-extrato');
+        pedidos.forEach(pedido => {
+          const item = criar('button', 'card-extrato card-pedido');
+          item.type = 'button';
+          item.setAttribute('aria-label', 'Ver detalhes do pedido ' + numeroPedido(pedido));
+
+          const esq = criar('div', 'extrato-col-esq');
+          if (pedido.emoji) esq.appendChild(criar('span', 'extrato-emoji', pedido.emoji));
+          const info = criar('div', 'extrato-info');
+          info.appendChild(criar('span', 'pedido-numero', 'Pedido ' + numeroPedido(pedido)));
+          info.appendChild(criar('strong', 'extrato-produto-nome', pedido.produto));
+          info.appendChild(criar('span', 'extrato-data', 'Feito em ' + pedido.data));
+          esq.appendChild(info);
+          item.appendChild(esq);
+
+          const dir = criar('div', 'extrato-col-dir');
+          dir.appendChild(criar('span', 'extrato-valor', moeda(pedido.valor)));
+          const status = criar('span', 'badge-status', textoStatus(pedido));
+          if (etapaAtual(pedido) === 0) status.classList.add('pendente');
+          dir.appendChild(status);
+          item.appendChild(dir);
+
+          item.addEventListener('click', () => abrirPedido(pedido.id));
+          lista.appendChild(item);
+        });
+        pagina.appendChild(lista);
+      }
+
+      conteudo.appendChild(pagina);
+      window.scrollTo(0, 0);
+    }
+
+    function abrirPedido(id) {
+      const pedido = lerPedidos().find(item => item.id === id);
+      conteudo.replaceChildren();
+      const pagina = criar('div', 'pagina');
+
+      const voltar = criar('button', 'link-voltar', '‹ Voltar para meus pedidos');
+      voltar.type = 'button';
+      voltar.addEventListener('click', mostrarPedidos);
+      pagina.appendChild(voltar);
+
+      if (!pedido) {
+        const msg = criar('div', 'erro-produto', 'Pedido não encontrado');
+        msg.setAttribute('role', 'alert');
+        pagina.appendChild(msg);
+        conteudo.appendChild(pagina);
+        window.scrollTo(0, 0);
+        return;
+      }
+
+      pagina.appendChild(criar('h2', 'pagina-titulo', 'Pedido ' + numeroPedido(pedido)));
+
+      const container = criar('div', 'checkout-container');
+
+      // Acompanhamento do pedido
+      const acompanhamento = criar('div', 'checkout-resumo');
+      acompanhamento.appendChild(criar('h3', 'secao-titulo', 'Acompanhamento'));
+      const etapas = criar('ol', 'etapas-pedido');
+      const atual = etapaAtual(pedido);
+      ETAPAS_PEDIDO.forEach((nome, i) => {
+        const etapa = criar('li', 'etapa', i === 1 && atual === 0 ? 'Aguardando pagamento' : nome);
+        if (i < atual) etapa.classList.add('concluida');
+        if (i === atual) {
+          etapa.classList.add('atual');
+          etapa.setAttribute('aria-current', 'step');
+        }
+        etapas.appendChild(etapa);
+      });
+      acompanhamento.appendChild(etapas);
+      container.appendChild(acompanhamento);
+
+      // Resumo do pedido
+      const resumo = criar('div', 'checkout-resumo');
+      resumo.appendChild(criar('h3', 'secao-titulo', 'Resumo do pedido'));
+
+      const itemResumo = criar('div', 'resumo-item');
+      itemResumo.appendChild(criar('div', 'resumo-icone', pedido.emoji || '📦'));
+      const itemInfo = criar('div', 'resumo-info');
+      itemInfo.appendChild(criar('strong', '', pedido.produto));
+      itemInfo.appendChild(criar('span', 'resumo-preco-unitario', 'Quantidade: 1'));
+      if (pedido.vendedor) itemInfo.appendChild(criar('span', 'resumo-preco-unitario', 'Vendido por ' + pedido.vendedor));
+      itemResumo.appendChild(itemInfo);
+      resumo.appendChild(itemResumo);
+
+      const dados = criar('dl', 'caracteristicas pedido-dados');
+      [
+        ['Data', pedido.data],
+        ['Pagamento', pedido.modoCompra],
+        ['Frete', pedido.freteGratis === false ? 'A combinar' : 'Grátis'],
+        ['Status', textoStatus(pedido)]
+      ].forEach(([k, v]) => {
+        dados.appendChild(criar('dt', '', k));
+        dados.appendChild(criar('dd', '', v));
+      });
+      resumo.appendChild(dados);
+
+      const totalInfo = criar('div', 'resumo-total');
+      totalInfo.appendChild(criar('span', '', atual === 0 ? 'Total:' : 'Total pago:'));
+      totalInfo.appendChild(criar('strong', 'total-destaque', moeda(pedido.valor)));
+      resumo.appendChild(totalInfo);
+
+      container.appendChild(resumo);
+      pagina.appendChild(container);
+
+      const produto = PRODUTOS.find(p => p.id === pedido.produtoId);
+      if (produto) {
+        const btnNovamente = criar('button', 'btn btn-comprar-novamente', 'Comprar novamente');
+        btnNovamente.type = 'button';
+        btnNovamente.addEventListener('click', () => abrirProduto(produto.id));
+        pagina.appendChild(btnNovamente);
+      }
+
+      conteudo.appendChild(pagina);
+      window.scrollTo(0, 0);
+    }
+
     document.querySelector('[data-aba="produtos"]').addEventListener('click', () => {
       mostrarListaProdutos();
       fecharMenu();
@@ -502,6 +672,11 @@ const CHAVE_USUARIOS = 'usuarios';
         fecharMenu();
       });
     }
+
+    document.querySelector('[data-aba="pedidos"]').addEventListener('click', () => {
+      mostrarPedidos();
+      fecharMenu();
+    });
 
     /* ---------- Ao abrir a página ---------- */
     const sessao = guardar.ler(CHAVE_SESSAO);

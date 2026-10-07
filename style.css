@@ -728,6 +728,100 @@ button {
   color: var(--cor-texto-suave);
 }
 
+/* ===== Meus Pedidos ===== */
+.card-pedido {
+  width: 100%;
+  text-align: left;
+  color: var(--cor-texto);
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.card-pedido:hover {
+  border-color: var(--cor-destaque);
+  box-shadow: var(--sombra);
+}
+
+.pedido-numero {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cor-destaque-escura);
+}
+
+.badge-status.pendente {
+  color: #a86a00;
+  background: #fff4dd;
+}
+
+.etapas-pedido {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 8px 0 0;
+  list-style: none;
+}
+
+.etapa {
+  position: relative;
+  padding-left: 32px;
+  font-size: 15px;
+  color: var(--cor-texto-suave);
+}
+
+.etapa::before {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 0;
+  width: 18px;
+  height: 18px;
+  background: var(--cor-superficie);
+  border: 2px solid var(--cor-borda);
+  border-radius: 50%;
+}
+
+.etapa:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 22px;
+  left: 10px;
+  width: 2px;
+  height: 18px;
+  background: var(--cor-borda);
+}
+
+.etapa.concluida {
+  color: var(--cor-texto);
+}
+
+.etapa.concluida::before {
+  background: #1c8a55;
+  border-color: #1c8a55;
+}
+
+.etapa.concluida::after {
+  background: #1c8a55;
+}
+
+.etapa.atual {
+  font-weight: 600;
+  color: var(--cor-destaque-escura);
+}
+
+.etapa.atual::before {
+  border-color: var(--cor-destaque);
+  box-shadow: 0 0 0 4px var(--cor-destaque-clara);
+}
+
+.pedido-dados {
+  margin: 16px 0 0;
+  grid-template-columns: 110px 1fr;
+}
+
+.btn-comprar-novamente {
+  margin-top: 24px;
+  padding: 12px 24px;
+}
+
 @media (max-width: 700px) {
   .checkout-container {
     grid-template-columns: 1fr;
