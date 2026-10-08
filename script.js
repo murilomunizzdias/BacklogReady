@@ -255,6 +255,71 @@ const CHAVE_USUARIOS = 'usuarios';
       if (p.freteGratis) compra.appendChild(criar('span', 'frete', 'Chegará grátis'));
       compra.appendChild(criar('span', 'estoque', 'Estoque disponível: ' + p.estoque + ' unidades'));
 
+      const freteBox = criar('section', 'calculo-frete');
+      freteBox.setAttribute('aria-labelledby', 'titulo-frete');
+      const tituloFrete = criar('h3', 'calculo-frete-titulo', 'Calcule o frete');
+      tituloFrete.id = 'titulo-frete';
+      freteBox.appendChild(tituloFrete);
+
+      const freteForm = criar('form', 'form-frete');
+      const cepLabel = criar('label', 'campo-frete', 'Digite seu CEP');
+      const cepInput = document.createElement('input');
+      cepInput.type = 'text';
+      cepInput.inputMode = 'numeric';
+      cepInput.autocomplete = 'postal-code';
+      cepInput.maxLength = 9;
+      cepInput.placeholder = '00000-000';
+      cepInput.setAttribute('aria-label', 'CEP');
+      cepLabel.appendChild(cepInput);
+      freteForm.appendChild(cepLabel);
+
+      const calcularFrete = criar('button', 'btn btn-calcular-frete', 'Calcular');
+      calcularFrete.type = 'submit';
+      freteForm.appendChild(calcularFrete);
+      freteBox.appendChild(freteForm);
+
+      const freteMensagem = criar('p', 'mensagem-frete');
+      freteMensagem.setAttribute('role', 'status');
+      freteMensagem.setAttribute('aria-live', 'polite');
+      freteBox.appendChild(freteMensagem);
+
+      const opcoesFrete = criar('div', 'opcoes-frete');
+      freteBox.appendChild(opcoesFrete);
+
+      freteForm.addEventListener('submit', e => {
+        e.preventDefault();
+        const cep = cepInput.value.replace(/\D/g, '');
+        freteMensagem.className = 'mensagem-frete';
+        opcoesFrete.replaceChildren();
+
+        if (cep.length !== 8 || /^0+$/.test(cep)) {
+          freteMensagem.classList.add('mensagem-frete-erro');
+          freteMensagem.textContent = 'CEP inválido. Digite um CEP com 8 números.';
+          cepInput.focus();
+          return;
+        }
+
+        freteMensagem.classList.add('mensagem-frete-sucesso');
+        freteMensagem.textContent = 'Opções de frete para o CEP ' + cep.slice(0, 5) + '-' + cep.slice(5) + ':';
+
+        const opcoes = [
+          { nome: p.freteGratis ? 'Frete grátis' : 'Entrega econômica', prazo: '8 a 12 dias úteis', valor: p.freteGratis ? 0 : 18.90 },
+          { nome: 'Entrega expressa', prazo: '3 a 5 dias úteis', valor: 29.90 }
+        ];
+
+        opcoes.forEach(opcao => {
+          const item = criar('div', 'opcao-frete');
+          const dados = criar('div', 'opcao-frete-dados');
+          dados.appendChild(criar('strong', '', opcao.nome));
+          dados.appendChild(criar('span', '', opcao.prazo));
+          item.appendChild(dados);
+          item.appendChild(criar('strong', 'opcao-frete-valor', opcao.valor === 0 ? 'Grátis' : moeda(opcao.valor)));
+          opcoesFrete.appendChild(item);
+        });
+      });
+
+      compra.appendChild(freteBox);
+
       const comprar = criar('button', 'btn', 'Comprar agora');
       comprar.type = 'button';
       comprar.addEventListener('click', () => abrirSelecaoModoCompra(p));
