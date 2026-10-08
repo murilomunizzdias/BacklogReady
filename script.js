@@ -164,6 +164,7 @@ const CHAVE_USUARIOS = 'usuarios';
         parcelas: 12,
         freteGratis: true,
         estoque: 12,
+        custo: 120.00,
         vendidos: 1840,
         avaliacao: 4.7,
         avaliacoes: 523,
@@ -175,6 +176,78 @@ const CHAVE_USUARIOS = 'usuarios';
           ['Conexão', 'Bluetooth 5.3 e cabo P2'],
           ['Bateria', 'Até 40 horas'],
           ['Cor', 'Preto'],
+          ['Garantia', '12 meses do vendedor']
+        ]
+      },
+      {
+        id: 2,
+        nome: 'Smartwatch Fit Pro com GPS e Monitor Cardíaco',
+        marca: 'Fit Pro',
+        emoji: '⌚',
+        preco: 299.90,
+        precoAntigo: 379.90,
+        parcelas: 10,
+        freteGratis: true,
+        estoque: 8,
+        custo: 190.00,
+        vendidos: 960,
+        avaliacao: 4.5,
+        avaliacoes: 312,
+        vendedor: 'SonoMax Oficial',
+        descricao: 'Relógio inteligente com GPS integrado, monitor cardíaco 24 horas, resistência à água de 5 ATM e bateria de até 7 dias.',
+        caracteristicas: [
+          ['Marca', 'Fit Pro'],
+          ['Tela', '1,4 pol. AMOLED'],
+          ['Bateria', 'Até 7 dias'],
+          ['Resistência', '5 ATM'],
+          ['Garantia', '12 meses do vendedor']
+        ]
+      },
+      {
+        id: 3,
+        nome: 'Mochila Impermeável 25L para Notebook',
+        marca: 'TrilhaUrbana',
+        emoji: '🎒',
+        preco: 129.90,
+        precoAntigo: 159.90,
+        parcelas: 6,
+        freteGratis: true,
+        estoque: 20,
+        custo: 70.00,
+        vendidos: 2410,
+        avaliacao: 4.8,
+        avaliacoes: 877,
+        vendedor: 'SonoMax Oficial',
+        descricao: 'Mochila impermeável de 25 litros com compartimento acolchoado para notebook de até 15,6 polegadas e porta USB externa.',
+        caracteristicas: [
+          ['Marca', 'TrilhaUrbana'],
+          ['Capacidade', '25 litros'],
+          ['Material', 'Poliéster impermeável'],
+          ['Cor', 'Cinza grafite'],
+          ['Garantia', '6 meses do vendedor']
+        ]
+      },
+      {
+        id: 4,
+        nome: 'Garrafa Térmica de Inox 1 Litro',
+        marca: 'TermoVida',
+        emoji: '🥤',
+        preco: 79.90,
+        precoAntigo: 99.90,
+        parcelas: 3,
+        freteGratis: true,
+        estoque: 35,
+        custo: 35.00,
+        vendidos: 5120,
+        avaliacao: 4.9,
+        avaliacoes: 1630,
+        vendedor: 'SonoMax Oficial',
+        descricao: 'Garrafa térmica de aço inox com parede dupla a vácuo. Mantém bebidas geladas por 24 horas ou quentes por 12 horas.',
+        caracteristicas: [
+          ['Marca', 'TermoVida'],
+          ['Capacidade', '1 litro'],
+          ['Material', 'Aço inox 304'],
+          ['Cor', 'Prata'],
           ['Garantia', '12 meses do vendedor']
         ]
       }
@@ -675,6 +748,153 @@ const CHAVE_USUARIOS = 'usuarios';
 
     document.querySelector('[data-aba="pedidos"]').addEventListener('click', () => {
       mostrarPedidos();
+      fecharMenu();
+    });
+
+    /* ---------- Extrato de vendas (vendedor) ---------- */
+    /* "adicionais" = custos descontados no recebimento (frete, embalagem).
+       Sem adicionais, o valor recebido é igual ao valor da venda. */
+    const VENDAS = [
+      { id: 'V-1001', produtoId: 1, quantidade: 1, data: '03/10/2026', comprador: 'Mariana S.', adicionais: [] },
+      { id: 'V-1002', produtoId: 2, quantidade: 1, data: '03/10/2026', comprador: 'Carlos P.', adicionais: [] },
+      { id: 'V-1003', produtoId: 3, quantidade: 2, data: '04/10/2026', comprador: 'Juliana M.', adicionais: [] },
+      { id: 'V-1004', produtoId: 1, quantidade: 1, data: '04/10/2026', comprador: 'Roberto A.',
+        adicionais: [{ tipo: 'Frete', valor: 24.90 }] },
+      { id: 'V-1005', produtoId: 4, quantidade: 3, data: '05/10/2026', comprador: 'Fernanda L.',
+        adicionais: [{ tipo: 'Frete', valor: 18.50 }, { tipo: 'Embalagem', valor: 6.00 }] },
+      { id: 'V-1006', produtoId: 2, quantidade: 2, data: '05/10/2026', comprador: 'Paulo H.',
+        adicionais: [{ tipo: 'Frete', valor: 31.40 }, { tipo: 'Embalagem', valor: 12.90 }] }
+    ];
+
+    const centavos = v => Math.round(v * 100);
+    const porcento = v => v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
+
+    /* Calcula venda, recebimento, diferença e lucro de uma venda */
+    function calcularVenda(v) {
+      const prod = PRODUTOS.find(p => p.id === v.produtoId);
+      const venda = centavos(prod.preco) * v.quantidade;
+      const adicionais = v.adicionais.reduce((t, a) => t + centavos(a.valor), 0);
+      const recebido = venda - adicionais;
+      const custo = centavos(prod.custo) * v.quantidade;
+      const lucro = recebido - custo;
+      return {
+        prod,
+        venda: venda / 100,
+        recebido: recebido / 100,
+        diferenca: (recebido - venda) / 100,
+        custo: custo / 100,
+        lucro: lucro / 100,
+        margem: lucro / venda * 100,
+        correto: recebido === venda
+      };
+    }
+
+    function mostrarExtratoVendas() {
+      conteudo.replaceChildren();
+      const pagina = criar('div', 'pagina');
+      pagina.appendChild(criar('h2', 'pagina-titulo', 'Extrato de vendas'));
+
+      const calc = VENDAS.map(calcularVenda);
+      const totalVenda = calc.reduce((t, c) => t + c.venda, 0);
+      const totalRecebido = calc.reduce((t, c) => t + c.recebido, 0);
+      const comDiferenca = calc.filter(c => !c.correto).length;
+
+      const resumo = criar('div', 'vendas-resumo');
+      [
+        ['Total vendido', moeda(totalVenda)],
+        ['Total recebido', moeda(totalRecebido)],
+        ['Vendas com diferença', comDiferenca + ' de ' + calc.length]
+      ].forEach(([k, val]) => {
+        const item = criar('div', 'vendas-resumo-item');
+        item.appendChild(criar('span', 'vendas-meta', k));
+        item.appendChild(criar('strong', 'vendas-resumo-valor', val));
+        resumo.appendChild(item);
+      });
+      pagina.appendChild(resumo);
+
+      const lista = criar('div', 'vendas-lista');
+      VENDAS.forEach((v, i) => {
+        const c = calc[i];
+        const linha = criar('button', 'vendas-linha');
+        linha.type = 'button';
+        linha.setAttribute('aria-label', 'Abrir extrato da venda ' + v.id);
+        linha.appendChild(criar('span', 'vendas-icone', c.prod.emoji));
+
+        const info = criar('span', 'vendas-info');
+        info.appendChild(criar('span', 'vendas-nome', c.prod.nome));
+        info.appendChild(criar('span', 'vendas-meta', 'Venda ' + v.id + ' • ' + v.data + ' • ' + v.quantidade + ' un.'));
+        linha.appendChild(info);
+
+        const valores = criar('span', 'vendas-valores');
+        valores.appendChild(criar('span', 'vendas-valor', moeda(c.recebido)));
+        valores.appendChild(criar('span', 'vendas-meta', 'venda ' + moeda(c.venda)));
+        linha.appendChild(valores);
+
+        linha.appendChild(criar('span', c.correto ? 'selo selo-ok' : 'selo selo-dif', c.correto ? 'Valores iguais' : 'Diferença'));
+        linha.addEventListener('click', () => abrirExtratoVenda(v.id));
+        lista.appendChild(linha);
+      });
+      pagina.appendChild(lista);
+      conteudo.appendChild(pagina);
+      window.scrollTo(0, 0);
+    }
+
+    /* Abre o extrato da venda e compara valor vendido x valor recebido */
+    function abrirExtratoVenda(idVenda) {
+      const v = VENDAS.find(item => item.id === idVenda);
+      conteudo.replaceChildren();
+      const pagina = criar('div', 'pagina');
+
+      const voltar = criar('button', 'link-voltar', '‹ Voltar para extrato de vendas');
+      voltar.type = 'button';
+      voltar.addEventListener('click', mostrarExtratoVendas);
+      pagina.appendChild(voltar);
+
+      if (!v) {
+        const msg = criar('div', 'erro-produto', 'Venda não encontrada');
+        msg.setAttribute('role', 'alert');
+        pagina.appendChild(msg);
+        conteudo.appendChild(pagina);
+        return;
+      }
+
+      const c = calcularVenda(v);
+      const caixa = criar('div', 'vendas-detalhe');
+      caixa.appendChild(criar('h2', 'produto-nome', c.prod.nome));
+      caixa.appendChild(criar('span', 'vendas-meta', 'Venda ' + v.id + ' • ' + v.data + ' • Comprador: ' + v.comprador + ' • Quantidade: ' + v.quantidade));
+
+      const linhas = [['Valor da venda', moeda(c.venda)]];
+      v.adicionais.forEach(a => linhas.push(['(−) ' + a.tipo, moeda(a.valor)]));
+      linhas.push(['Valor recebido', moeda(c.recebido)]);
+      linhas.push(['Diferença (recebido − venda)', moeda(c.diferenca)]);
+      linhas.push(['Custo do produto', moeda(c.custo)]);
+      linhas.push(['Lucro', moeda(c.lucro) + ' (' + porcento(c.margem) + ' da venda)']);
+
+      const tabela = criar('dl', 'caracteristicas vendas-comparacao');
+      linhas.forEach(([k, val]) => {
+        tabela.appendChild(criar('dt', '', k));
+        tabela.appendChild(criar('dd', '', val));
+      });
+      caixa.appendChild(tabela);
+
+      const resultado = criar('div', c.correto ? 'resultado-ok' : 'erro-produto');
+      resultado.setAttribute('role', c.correto ? 'status' : 'alert');
+      if (c.correto) {
+        resultado.textContent = 'Os valores estão corretos: o valor recebido é igual ao valor da venda. Seu lucro foi de ' + porcento(c.margem) + '.';
+      } else {
+        const motivos = v.adicionais.map(a => a.tipo.toLowerCase() + ' de ' + moeda(a.valor)).join(' e ');
+        resultado.textContent = 'O valor recebido é menor que o valor da venda em ' + moeda(-c.diferenca) +
+          ', por custo adicional de ' + motivos + ' na entrega. Seu lucro foi de ' + porcento(c.margem) + '.';
+      }
+      caixa.appendChild(resultado);
+
+      pagina.appendChild(caixa);
+      conteudo.appendChild(pagina);
+      window.scrollTo(0, 0);
+    }
+
+    document.querySelector('[data-aba="vendas"]').addEventListener('click', () => {
+      mostrarExtratoVendas();
       fecharMenu();
     });
 

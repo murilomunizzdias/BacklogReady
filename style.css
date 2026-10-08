@@ -838,3 +838,138 @@ button {
     flex-direction: column;
   }
 }
+/* ===== Extrato de vendas (vendedor) ===== */
+.vendas-resumo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--espaco);
+  margin-bottom: 20px;
+}
+
+.vendas-resumo-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+}
+
+.vendas-resumo-valor {
+  font-size: 20px;
+}
+
+.vendas-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vendas-linha {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px;
+  text-align: left;
+  color: var(--cor-texto);
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.vendas-linha:hover {
+  border-color: var(--cor-destaque);
+  box-shadow: var(--sombra);
+}
+
+.vendas-icone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  font-size: 26px;
+  background: var(--cor-destaque-clara);
+  border-radius: 10px;
+}
+
+.vendas-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.vendas-nome {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.vendas-meta {
+  font-size: 14px;
+  color: var(--cor-texto-suave);
+}
+
+.vendas-valores {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex: none;
+}
+
+.vendas-valor {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.selo {
+  flex: none;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 999px;
+}
+
+.selo-ok {
+  color: #1c6b45;
+  background: #e8f6ee;
+}
+
+.selo-dif {
+  color: var(--cor-erro);
+  background: #fdecec;
+}
+
+.vendas-detalhe {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+}
+
+.vendas-comparacao {
+  margin: 8px 0 0;
+}
+
+.resultado-ok {
+  padding: 20px;
+  font-weight: 600;
+  color: #1c6b45;
+  background: #e8f6ee;
+  border: 1px solid #1c8a55;
+  border-radius: var(--raio);
+}
+
+@media (max-width: 700px) {
+  .vendas-linha {
+    flex-wrap: wrap;
+  }
+}
