@@ -269,6 +269,71 @@ button {
   font-weight: 600;
 }
 
+.pagina-home {
+  padding-top: 96px;
+  text-align: center;
+}
+
+.home-titulo {
+  margin-bottom: 8px;
+  font-size: 30px;
+  font-weight: 600;
+}
+
+.home-subtitulo {
+  margin-bottom: 24px;
+  color: var(--cor-texto-suave);
+}
+
+.barra-pesquisa {
+  display: flex;
+  width: min(100%, 640px);
+  margin: 0 auto;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+  overflow: hidden;
+}
+
+.barra-pesquisa input {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 16px;
+  color: var(--cor-texto);
+  background: transparent;
+  border: 0;
+}
+
+.barra-pesquisa input:focus {
+  outline: none;
+}
+
+.barra-pesquisa:focus-within {
+  border-color: var(--cor-destaque);
+  box-shadow: 0 0 0 3px rgba(91, 141, 239, 0.2);
+}
+
+.btn-pesquisa {
+  width: 52px;
+  color: #ffffff;
+  font-size: 24px;
+  background: var(--cor-destaque);
+  border: 0;
+}
+
+.btn-pesquisa:hover {
+  background: var(--cor-destaque-escura);
+}
+
+.resultado-vazio {
+  padding: 24px;
+  color: var(--cor-texto-suave);
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+}
+
 .grade-produtos {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
